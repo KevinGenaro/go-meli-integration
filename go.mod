@@ -1,4 +1,4 @@
-module github.com/franciscolmos/go-meli-integration
+module github.com/KevinGenaro/go-meli-integration
 
 go 1.14
 

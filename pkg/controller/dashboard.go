@@ -1,107 +1,109 @@
 package controller
+
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/gin-gonic/gin"
 	"io/ioutil"
 	"net/http"
 	"strconv"
+
+	"github.com/gin-gonic/gin"
 )
 
 // ITEMS DEL VENDEDOR
 type ItemsIdMeli struct {
-	Id []string              `json:"results"`
+	Id []string `json:"results"`
 }
 
 type PictureMeli struct {
-	Url string                 `json:"url"`
+	Url string `json:"url"`
 }
 
 type ItemMeli struct {
-	Id    string               `json:"id"`
-	Title string               `json:"title"`
-	Price float64              `json:"price"`
-	Available_quantity int     `json:"available_quantity"`
-	Pictures []PictureMeli	   `json:"pictures"`
+	Id                 string        `json:"id"`
+	Title              string        `json:"title"`
+	Price              float64       `json:"price"`
+	Available_quantity int           `json:"available_quantity"`
+	Pictures           []PictureMeli `json:"pictures"`
 }
 
 // ITEMS VENDIDOS
 type SingleItemMeli struct {
-	Title string                `json:"title"`
+	Title string `json:"title"`
 }
 
 type Order_ItemsMeli struct {
-	SingleItem SingleItemMeli    `json:"item"`
-	Quantity int                 `json:"quantity"`
-	Unit_price float64           `json:"unit_price"`
-	Full_Unit_Price float64      `json:"full_unit_price"`
+	SingleItem      SingleItemMeli `json:"item"`
+	Quantity        int            `json:"quantity"`
+	Unit_price      float64        `json:"unit_price"`
+	Full_Unit_Price float64        `json:"full_unit_price"`
 }
 
 type ResultMeli struct {
-	Order_Items []Order_ItemsMeli `json:"order_items"`
-	Total_amount float64          `json:"total_amount"`
-	Paid_amount float64           `json:"paid_amount"`
-	Date_closed string            `json:"date_closed"`
+	Order_Items  []Order_ItemsMeli `json:"order_items"`
+	Total_amount float64           `json:"total_amount"`
+	Paid_amount  float64           `json:"paid_amount"`
+	Date_closed  string            `json:"date_closed"`
 }
 
 type SoldItemMeli struct {
-	Result []ResultMeli            `json:"results"`
+	Result []ResultMeli `json:"results"`
 }
 
 // PREGUNTAS SIN RESPONDER
 type QuestionMeli struct {
-	Item_id string        `json:"item_id"`
-	Date_created string   `json:"date_created"`
-	Text string           `json:"text"`
-	Status string         `json:"status"`
+	Item_id      string `json:"item_id"`
+	Date_created string `json:"date_created"`
+	Text         string `json:"text"`
+	Status       string `json:"status"`
 }
 
 type QuestionsMeli struct {
-	Questions []QuestionMeli  `json:"questions"`
+	Questions []QuestionMeli `json:"questions"`
 }
 
 // ESTRUCTURA PARA ENVIAR AL FRONT
 
 type Item struct {
-	Id string
-	Title string
-	Quantity int
-	Price float64
+	Id           string
+	Title        string
+	Quantity     int
+	Price        float64
 	FirstPicture string
 }
 
 type Sold_Item struct {
-	Title string
+	Title         string
 	Sold_Quantity int
-	Unit_Price float64
-	Subtotal float64
+	Unit_Price    float64
+	Subtotal      float64
 }
 
 type Sale_Order struct {
-	Sold_Items [] Sold_Item
-	Sale_date string
-	Total  float64
+	Sold_Items     []Sold_Item
+	Sale_date      string
+	Total          float64
 	Total_Delivery float64
 }
 
 type Unanswered_Question struct {
 	Question_date string
-	Title string
+	Title         string
 	Question_text string
 }
 
 type Dashboard struct {
-	Items [] Item
-	Sales_Orders [] Sale_Order
-	Unanswered_Questions [] Unanswered_Question
+	Items                []Item
+	Sales_Orders         []Sale_Order
+	Unanswered_Questions []Unanswered_Question
 }
 
-func GetDashboard (c *gin.Context){
+func GetDashboard(c *gin.Context) {
 	var Dashboard Dashboard
 
 	// Obtenemos listado de ids de items del vendedor con id de vendedor y accessToken dinamicos
 
-	ids, err := http.Get("https://api.mercadolibre.com/users/"+ strconv.Itoa(TokenR.User_id) +"/items/search?access_token=" + TokenR.Access_token)
+	ids, err := http.Get("https://api.mercadolibre.com/users/" + strconv.Itoa(TokenR.User_id) + "/items/search?access_token=" + TokenR.Access_token)
 
 	if err != nil {
 		fmt.Errorf("Error", err.Error())
@@ -116,11 +118,11 @@ func GetDashboard (c *gin.Context){
 	json.Unmarshal(dataItemsId, &itemsIds)
 
 	// Listado de productos (Título, Cantidad, Precio, Primera foto)
-	var items [] Item
+	var items []Item
 	for i := 0; i < len(itemsIds.Id); i++ {
 		resp2, err := http.Get("https://api.mercadolibre.com/items/" + itemsIds.Id[i] + "?access_token=" + TokenR.Access_token)
 		if err != nil {
-			fmt.Errorf("Error",err.Error())
+			fmt.Errorf("Error", err.Error())
 			return
 		}
 		dataItemsDetail, err := ioutil.ReadAll(resp2.Body)
@@ -143,7 +145,7 @@ func GetDashboard (c *gin.Context){
 	Dashboard.Items = items
 
 	//  Ventas efectuadas
-	resp2, err := http.Get("https://api.mercadolibre.com/orders/search?seller="+ strconv.Itoa(TokenR.User_id) +"&order.status=paid&access_token=" + TokenR.Access_token)
+	resp2, err := http.Get("https://api.mercadolibre.com/orders/search?seller=" + strconv.Itoa(TokenR.User_id) + "&order.status=paid&access_token=" + TokenR.Access_token)
 
 	defer resp2.Body.Close()
 
@@ -152,7 +154,7 @@ func GetDashboard (c *gin.Context){
 	var soldItems SoldItemMeli
 	json.Unmarshal(dataSales, &soldItems)
 
-	var Sales_Orders [] Sale_Order
+	var Sales_Orders []Sale_Order
 
 	for i := 0; i < len(soldItems.Result); i++ {
 		var Sale_Order_Temp Sale_Order
@@ -190,7 +192,7 @@ func GetDashboard (c *gin.Context){
 		var UnansweredQuestiontemp Unanswered_Question
 
 		for i := 0; i < len(questions.Questions); i++ {
-			if  len(questions.Questions) == 0 || questions.Questions[i].Status != "UNANSWERED" {
+			if len(questions.Questions) == 0 || questions.Questions[i].Status != "UNANSWERED" {
 				continue
 			}
 			for j := 0; j < len(Dashboard.Items); j++ {
